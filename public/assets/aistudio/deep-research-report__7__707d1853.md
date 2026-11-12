@@ -1,0 +1,42 @@
+# Cenário climático e vulnerabilidade  
+
+As previsões globais apontam um **El Niño excepcionalmente forte em 2026/27**, com impactos graves sobre a saúde no Brasil. Um estudo do Laboratório de Impacto Climático da Univ. de Chicago estima até **451 mil mortes por calor extremo** no mundo entre set/2026 e fev/2027 – cerca de **13,3 mil só no Brasil**. No Rio, as temperaturas já têm batido recordes locais: em 26/12/2025, o Observatório do Calor do Complexo do Alemão registrou **43,92 °C** no Morro do Adeus (área pobre e densa) contra apenas 34 °C medidos pelo sistema oficial Alerta Rio na mesma data. Esses extremos já pressionam o sistema de saúde: entre 9 e 11 de jan/2026 o Rio entrou em “Calor 3” (≥40 °C por 3 dias) e registrou **24 atendimentos por hora** por sintomas ligados ao calor intenso. Em resposta, o Tribunal de Justiça do RJ determinou ao governo estadual um plano emergencial para climatização das escolas – embora a própria Secretaria de Educação afirme ter ar-condicionado em *“quase 97%”* das unidades estaduais. Essa discrepância revela vulnerabilidades: muitas escolas públicas seguem expostas a ambientes insalubres de calor extremo sem monitoramento contínuo.  
+
+# Dados públicos e mapeamento no Rio  
+
+Para planejar intervenções, é essencial consolidar **dados georreferenciados** de clima e de infraestrutura escolar. O sistema Alerta Rio disponibiliza o cadastro de **33 estações meteorológicas** ativas na cidade (meteorologia e pluviometria). Esses pontos podem ser mapeados para obter chuvas, vento e temperatura locais. Do lado escolar, o pacote estatístico **geobr (R)** oferece a função `read_schools`, que faz download de dados espaciais de todas as escolas brasileiras. Em conjunto com atlas escolares do Instituto Pereira Passos (Data.Rio) e o Censo Educacional, seria possível sobrepor mapas de escolas (municipais e estaduais) com mapas de ilhas de calor urbano.  A análise pode incluir dados como índice de vegetação (NDVI), cobertura de piso impermeável e qualidade das construções. Esse mapeamento detalhado permite identificar *“ilhas de calor”* nas cidades e quantas escolas públicas estão nessas áreas, incluindo seus endereços e características físicas (telhado, ventilação, etc.).  
+
+# Intervenções propostas contra o calor  
+
+As soluções para reduzir o calor nas escolas devem atuar em três níveis:
+
+- **Na sala de aula:** Instalar ou consertar aparelhos de ar-condicionado e de ventilação; prover refrigeração evaporativa ou ventiladores potentes em caráter emergencial; aplicar películas refletivas em janelas ou persianas claras; distribuir água gelada e organizar horários de maior movimento em horários mais frescos.  
+
+- **Na estrutura do prédio:** Pintar coberturas de telhado com tinta branca/refletiva ou instalar **telhados verdes** e jardins suspensos, que “são capazes de **reduzir a temperatura do ambiente**”. A cobertura vegetal absorve radiação solar e doura áreas quentes. Além disso, isolar termicamente paredes e tetos do pavimento superior (revestimento de EPS, por exemplo) e criar beirais ou brises que sombream ajanelas.  
+
+- **No entorno do prédio:** Aumentar a arborização e áreas verdes imediatamente adjacentes às escolas. O plantio de árvores cria corredores de sombra e ativa evapotranspiração, diminuindo a temperatura do ar local. A Secretária Municipal do Clima do Rio destaca que o monitoramento de calor servirá para planejar “microcorredores verdes” e o plantio estratégico de árvores nos pontos mais quentes. Outras medidas no quarteirão escolar: implantar calçadas permeáveis, remover asfaltos em excesso e criar fontes ou espelhos d’água (para resfriamento natural).  
+
+Cada intervenção deve considerar custo e urgência local. Por exemplo, tintas refletivas e ventiladores têm baixo custo imediato; jardins na cobertura e grandes árvores levam mais tempo. Mas em todos os níveis o foco é **abrir vias de circulação do ar e bloquear a radiação direta**. Esses esforços são complementares à eventual climatização futura das salas de aula.  
+
+# Iniciativas existentes e parcerias  
+
+No Rio já há esforços semelhantes focados em calor urbano, embora nenhum meça diretamente dentro das escolas:  
+
+- **Observatório do Calor do Alemão (Prefeitura + ONG Voz das Comunidades):** primeiro observatório comunitário da cidade, em parceria com a Secretaria Municipal de Meio Ambiente, instalou sensores de temperatura no Complexo do Alemão. Entre set/2025 e jan/2026 foram coletados 710 dados diários, revelando registros tão altos (43,9 °C) que motivaram a expansão do projeto para as favelas do Salgueiro e Manguinhos. Na segunda fase, UFRJ e UERJ se uniram à iniciativa para análise acadêmica e envolvimento da comunidade. O projeto prevê contratação de moradores locais para coletar medidas e depoimentos sobre o calor, ligando-se a ações urbanísticas – exatamente o tipo de metodologia comunitária que o Termômetro das Escolas pode aproveitar.  
+
+- **“Polvos da Maré”:** parceria da Prefeitura com o MIT Senseable City Lab instalou em 2026 cerca de 12 sensores em formato de polvo (IoT) para medir temperatura, umidade e poluentes no complexo da Maré. Embora não envolva estudantes, demonstra viabilidade de sensores de baixo custo e projeto com apoio comunitário. A rede Redes da Maré já mapeou ilhas de calor locais com instituições como WayCarbon, criando base de dados que o Termômetro poderia complementar.  
+
+- **Órgãos Públicos e Entidades:** O Ministério Público do RJ e sua força-tarefa na área de Educação/Ciência do Clima (Gaema) estão cobrando planos emergenciais para climatização de escolas. A Justiça ordenou o estado a diagnosticar infraestrutura e equipar unidades. A ONG **Casa Fluminense** e outras já levantam dados de injustiça climática na região metropolitana. Esses atores são potenciais parceiros que receberiam os dados do monitoramento de salas de aula, usando-os em processos já em curso. Outras fontes incluem o Instituto Pereira Passos (que mantém o Atlas Escolar do Rio), universidades como UFRRJ/UFRJ (com laboratórios de clima), e empresas de tecnologia local (ex: Firjan, que imprimiu os “Polvos”). A ponte com tribunais e secretarias é direta: por exemplo, o próprio Observatório do Alemão foi anunciado publicamente para orientar o plantio de árvores em áreas críticas.  
+
+# Priorização e métricas de impacto  
+
+Para orientar ações, sugerem-se critérios como **índice socioambiental da escola** (habitação local, cobertura de verde no entorno, tipo de construção, vulnerabilidade socioeconômica) e **exposição térmica histórica** (dias >32 °C e >40 °C). As métricas propostas para o projeto Termômetro incluem:  
+
+- Número de **leituras de temperatura** coletadas em cada sala/pátio, qual frequência e distribuição.  
+- Quantidade de **dias/horas críticas** acima de 32 °C e de 40 °C registrados nas escolas monitoradas (isso compara áreas quentes do município).  
+- Percentual de **alunos e funcionários** que conseguem citar ações do protocolo de calor antes e depois da iniciativa (teste de aprendizagem/consciência ambiental).  
+- Número de **órgãos e gestores** que recebem os dados (SME, SMAC, MPRJ, etc.) e se comprometem a integrar essas evidências em suas decisões.  
+
+Esses dados poderiam compor um painel público simples (mapas de calor por escola/bairro, gráficos de temperatura) e material educativo (cards, vídeos) para as comunidades escolares. O objetivo final é entregar informação concreta para a **ação judicial e política em andamento**: assim como a Lei do Absorvente usou evidências de dentro das escolas para mudar uma lei nacional, os dados do Termômetro podem alimentar processos similares de adaptação (ex.: exigências de conforto térmico nas normas educacionais). Em resumo, priorizaríamos áreas com maior exposição a ilhas de calor e vulnerabilidade social, acompanhando cada intervenção com indicadores quantitativos de redução de calor e aumento de segurança/saúde (todos os dados citados acima).  
+
+**Fontes:** Análises de tendências de clima e saúde (por exemplo, projeções do Laboratório de Impacto Climático da Univ. de Chicago), dados oficiais do Alerta Rio e geoposicionamento IBGE/IPP, estudos jornalísticos e institucionais sobre calor urbano no RJ, e relatórios de iniciativas locais de monitoramento climático. Estes embasam a estratégia de intervenção acima.

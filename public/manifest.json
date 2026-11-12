@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Termômetro das Escolas RJ",
+  "short_name": "TermometroRJ",
+  "description": "Inteligência climática, monitoramento de estresse térmico escolar e notificações de calor para a rede de ensino do Rio de Janeiro.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#181A1D",
+  "theme_color": "#181A1D",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["education", "weather", "utilities"]
+}

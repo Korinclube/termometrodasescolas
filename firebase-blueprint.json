@@ -1,0 +1,350 @@
+{
+  "entities": {
+    "PublicSchoolInspection": {
+      "title": "PublicSchoolInspection",
+      "description": "Dados técnicos públicos de infraestrutura e climatização da escola aprovados, sem dados pessoais.",
+      "type": "object",
+      "properties": {
+        "schoolId": {
+          "type": "string",
+          "description": "Identificador único da escola (ex: esc-33075210)",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado de publicação da vistoria",
+          "enum": ["published", "archived"]
+        },
+        "version": {
+          "type": "number",
+          "description": "Número sequencial da versão publicada"
+        },
+        "source": {
+          "type": "string",
+          "description": "Origem da informação técnica",
+          "maxLength": 64
+        },
+        "inspectedAt": {
+          "type": "string",
+          "description": "Data da vistoria no formato YYYY-MM-DD",
+          "maxLength": 32
+        },
+        "approvedAt": {
+          "type": "string",
+          "description": "Timestamp de aprovação e publicação",
+          "maxLength": 64
+        },
+        "inspectorRole": {
+          "type": "string",
+          "description": "Vínculo institucional público do responsável",
+          "enum": ["direcao", "professor", "gremio", "comunidade", "tecnico_externo"]
+        },
+        "realAcStatus": {
+          "type": "string",
+          "description": "Condição real verificada dos aparelhos de ar-condicionado",
+          "enum": ["operante", "parcial_inoperante", "inoperante_eletrica", "desconhecido"]
+        },
+        "acNotes": {
+          "type": "string",
+          "description": "Observações técnicas sobre climatização e energia",
+          "maxLength": 500
+        },
+        "roofType": {
+          "type": "string",
+          "description": "Material da cobertura do prédio",
+          "enum": ["fibrocimento", "laje_concreto", "telha_metalica", "termoacustica", "outro_desconhecido"]
+        },
+        "ventilationType": {
+          "type": "string",
+          "description": "Condição da ventilação natural",
+          "enum": ["cruzada_adequada", "unilateral_parcial", "bloqueada_ou_fechada", "desconhecido"]
+        },
+        "waterAccess": {
+          "type": "string",
+          "description": "Acesso a água potável fresca",
+          "enum": ["adequado_resfriado", "parcial", "critico", "desconhecido"]
+        },
+        "electricalOverloadReported": {
+          "type": "boolean",
+          "description": "Se foi reportada sobrecarga elétrica frequente"
+        },
+        "cableTheftReported": {
+          "type": "boolean",
+          "description": "Se houve furto de cabos ou fiação"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Observações gerais de infraestrutura",
+          "maxLength": 1000
+        },
+        "currentRevisionId": {
+          "type": "string",
+          "description": "ID da última revisão técnica aprovada",
+          "maxLength": 64
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp ISO da última atualização",
+          "maxLength": 64
+        },
+        "acType": {
+          "type": "string",
+          "description": "Tipo predominante de climatização verificada",
+          "enum": ["split", "janela", "central_com_renovacao", "ventilador", "nenhum", "desconhecido"]
+        },
+        "windowsOperable": {
+          "type": "string",
+          "description": "Condição de abertura das janelas",
+          "enum": ["todas_abrem", "algumas", "nenhuma", "desconhecido"]
+        },
+        "windowsClosedWhenAcOn": {
+          "type": "string",
+          "description": "Se as janelas ficam fechadas quando o ar-condicionado está ligado",
+          "enum": ["sempre", "as_vezes", "nunca", "desconhecido"]
+        },
+        "pmocStatus": {
+          "type": "string",
+          "description": "Situação do PMOC (Lei 13.589/2018)",
+          "enum": ["visto_documento", "informado_sem_documento", "nao_tem", "desconhecido"]
+        },
+        "lastFilterCleaning": {
+          "type": "string",
+          "description": "Mês da última limpeza de filtros no formato AAAA-MM",
+          "maxLength": 7
+        },
+        "moldOrDampSigns": {
+          "type": "boolean",
+          "description": "Presença de sinais de mofo ou umidade"
+        },
+        "nearbyPollutionSource": {
+          "type": "string",
+          "description": "Fonte próxima de poluição externa",
+          "enum": ["via_movimentada", "obra", "queima_de_lixo", "industria", "nenhuma", "desconhecido"]
+        },
+        "roomDimensions": {
+          "type": "object",
+          "description": "Dimensões medidas da sala vistoriada (comprimento e largura de 1 a 30 m; pé-direito de 2 a 8 m)"
+        }
+      },
+      "required": [
+        "schoolId",
+        "inspectedAt",
+        "inspectorRole",
+        "realAcStatus",
+        "roofType",
+        "ventilationType",
+        "waterAccess"
+      ]
+    },
+    "InspectionRevision": {
+      "title": "InspectionRevision",
+      "description": "Histórico imutável de revisão técnica da vistoria da escola para fins de auditoria pública.",
+      "type": "object",
+      "properties": {
+        "revisionId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "schoolId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "version": {
+          "type": "number"
+        },
+        "inspectedAt": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "inspectorRole": {
+          "type": "string",
+          "enum": ["direcao", "professor", "gremio", "comunidade", "tecnico_externo"]
+        },
+        "realAcStatus": {
+          "type": "string",
+          "enum": ["operante", "parcial_inoperante", "inoperante_eletrica", "desconhecido"]
+        },
+        "roofType": {
+          "type": "string",
+          "enum": ["fibrocimento", "laje_concreto", "telha_metalica", "termoacustica", "outro_desconhecido"]
+        },
+        "ventilationType": {
+          "type": "string",
+          "enum": ["cruzada_adequada", "unilateral_parcial", "bloqueada_ou_fechada", "desconhecido"]
+        },
+        "waterAccess": {
+          "type": "string",
+          "enum": ["adequado_resfriado", "parcial", "critico", "desconhecido"]
+        },
+        "acNotes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "acType": {
+          "type": "string",
+          "enum": ["split", "janela", "central_com_renovacao", "ventilador", "nenhum", "desconhecido"]
+        },
+        "windowsOperable": {
+          "type": "string",
+          "enum": ["todas_abrem", "algumas", "nenhuma", "desconhecido"]
+        },
+        "windowsClosedWhenAcOn": {
+          "type": "string",
+          "enum": ["sempre", "as_vezes", "nunca", "desconhecido"]
+        },
+        "pmocStatus": {
+          "type": "string",
+          "enum": ["visto_documento", "informado_sem_documento", "nao_tem", "desconhecido"]
+        },
+        "lastFilterCleaning": {
+          "type": "string",
+          "maxLength": 7
+        },
+        "moldOrDampSigns": {
+          "type": "boolean"
+        },
+        "nearbyPollutionSource": {
+          "type": "string",
+          "enum": ["via_movimentada", "obra", "queima_de_lixo", "industria", "nenhuma", "desconhecido"]
+        },
+        "roomDimensions": {
+          "type": "object"
+        }
+      },
+      "required": ["revisionId", "schoolId", "inspectedAt", "inspectorRole", "realAcStatus"]
+    },
+    "PrivateInspectorRecord": {
+      "title": "PrivateInspectorRecord",
+      "description": "Dados pessoais e de auditoria restritos do responsável pela vistoria (PII).",
+      "type": "object",
+      "properties": {
+        "revisionId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "authorUid": {
+          "type": "string",
+          "description": "UID Firebase Auth do editor autorizado",
+          "maxLength": 128
+        },
+        "inspectorName": {
+          "type": "string",
+          "description": "Nome completo do responsável",
+          "maxLength": 128
+        },
+        "inspectorEmail": {
+          "type": "string",
+          "description": "E-mail de contato institucional do responsável",
+          "maxLength": 128
+        },
+        "inspectorRole": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "submittedAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["revisionId", "authorUid", "inspectorName", "submittedAt"]
+    },
+    "InspectionDraft": {
+      "title": "InspectionDraft",
+      "description": "Rascunho de vistoria em elaboração, restrito ao autor antes da publicação.",
+      "type": "object",
+      "properties": {
+        "draftId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "schoolId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "authorUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "authorEmail": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "submitted_for_review"]
+        },
+        "inspectionData": {
+          "type": "object",
+          "description": "Payload parcial ou completo da vistoria"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["draftId", "schoolId", "authorUid", "status"]
+    },
+    "InspectorProfile": {
+      "title": "InspectorProfile",
+      "description": "Perfil e credenciamento institucional do usuário no sistema.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "enum": ["inspector", "reviewer", "admin"]
+        },
+        "assignedSchools": {
+          "type": "array",
+          "description": "Lista de IDs de escolas às quais o usuário está formalmente vinculado"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/inspections/{schoolId}": {
+      "schema": "PublicSchoolInspection",
+      "description": "Coleção pública com os dados técnicos consolidados mais recentes da vistoria aprovada."
+    },
+    "/inspections/{schoolId}/revisions/{revisionId}": {
+      "schema": "InspectionRevision",
+      "description": "Subcoleção pública com histórico de revisões técnicas para auditoria permanente."
+    },
+    "/inspections/{schoolId}/private/{revisionId}": {
+      "schema": "PrivateInspectorRecord",
+      "description": "Subcoleção de acesso restrito com dados pessoais (PII) do responsável da vistoria."
+    },
+    "/inspectionDrafts/{draftId}": {
+      "schema": "InspectionDraft",
+      "description": "Coleção restrita de rascunhos de vistoria em elaboração pelo autor."
+    },
+    "/inspectors/{uid}": {
+      "schema": "InspectorProfile",
+      "description": "Perfis e permissões de inspetores credenciados."
+    }
+  }
+}

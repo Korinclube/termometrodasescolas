@@ -1,0 +1,231 @@
+# Correção de integridade: escolas reais do Inep, ilha de calor pendente e rótulos honestos
+
+## Por que esta mudança
+
+Uma auditoria no código atual encontrou três problemas graves:
+
+1. As 15 escolas de `src/data/schoolsData.ts` têm códigos INEP, endereços e coordenadas que não correspondem às escolas reais. A E.M. Alfredo de Paula Freitas está no código como 33075210, em Rocha Miranda. O código real é 33074313 e a escola fica em Irajá. A E.M. Olegário Mariano é 33074615 (Honório Gurgel), e a E.M. Prof. Scintilla Exel é 33062110 (Queimados). Cinco escolas da lista não existem com esse nome: C.E. Cascadura, E.M. Bangu, C.E. Professor Diniz Neves, C.E. Visconde de Abaeté e E.M. Carlos Gomes.
+2. Os valores de `heatIslandFactorLST` e `greenCoveragePercent` não têm fonte. O estudo da UFRRJ citado no código não publicou valores por escola. Mesmo assim, o painel mostra esses números como "Observação Real" e os atribui à LIGA/UFRRJ.
+3. A seção 11.2 do `implementation_plan.md` afirma "Códigos INEP: 100% autênticos" e "Coordenadas 100% validadas", mas só o formato foi checado.
+
+## Regras desta tarefa (valem para todas as partes)
+
+- Não invente, não estime e não complete nenhum dado. Não busque dados na internet. Use só os dados deste prompt. O que não estiver aqui fica "pendente".
+- Copie os valores exatamente como estão, sem arredondar coordenadas.
+- Não apague nada do Firestore. Nenhuma operação de delete em nenhuma coleção.
+- Não mexa na previsão Open-Meteo, no Service Worker, nas notificações nem no simulador, a não ser onde este prompt pede.
+- Os 81 testes atuais precisam continuar passando. Adicione os testes pedidos abaixo.
+- Textos de interface em português do Brasil, sem travessão (—).
+
+## Parte 1. Tipos (`src/types.ts`)
+
+Altere `SchoolRecord`:
+
+- `heatIslandFactorLST: number | null`. Comentário: "Anomalia da temperatura de superfície em °C (Landsat 8/9, verões, método do Termômetro). null = pendente."
+- `greenCoveragePercent: number | null`. Comentário: "Cobertura arbórea num raio de 200 m (ESA WorldCover). null = pendente."
+- Novos campos:
+  - `officialName: string`
+  - `municipality: string`
+  - `municipalityIbgeCode: string`
+  - `coordinatesSource: string`
+  - `enrollmentByStage: { infantil: number; fundamental_1: number; fundamental_2: number; medio: number; eja: number }`
+  - `nightEnrollment: number`
+  - `shiftsInformed: boolean`
+  - `climatizationHistory: { year: number; roomsInUse: number; climatizedRooms: number }[]`
+  - `heatIsland?: HeatIslandRecord`
+  - `isDemo?: boolean`
+- Crie `HeatIslandRecord` com estes campos: `lstC`, `anomalyMetroC`, `refMetroC`, `anomalyMunicipalC`, `refMunicipalC`, `nObs`, `treeCover200mPct`, `quality` ('ok' | 'poucas_observacoes'), `period`, `method`, `source` e `importedAt`. Os números podem ser `number | null`.
+
+## Parte 2. Escolas reais (`src/data/schoolsData.ts`)
+
+Substitua todo o `INITIAL_SCHOOLS` por estas 12 escolas. Os dados foram conferidos em 4/11/2026 no Censo Escolar 2025 do Inep (tabela escola, via Base dos Dados) e no Catálogo de Escolas do Inep. Use cada objeto exatamente como está:
+
+```json
+[
+  {"id": "esc-33074313", "inepCode": "33074313", "name": "E.M. Alfredo de Paula Freitas", "officialName": "0514011 ESCOLA MUNICIPAL ALFREDO DE PAULA FREITAS", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Irajá", "region": "Zona Norte", "address": "Rua Gustavo de Andrade, 290, Irajá, Rio de Janeiro (RJ), 21235-500", "latitude": -22.838408, "longitude": -43.3241495, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 287, "enrollmentByStage": {"infantil": 58, "fundamental_1": 229, "fundamental_2": 0, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["infantil", "fundamental_1"], "shifts": [], "shiftsInformed": false, "totalRooms": 12, "declaredClimatizedRooms": 12, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 11, "climatizedRooms": 11}, {"year": 2024, "roomsInUse": 11, "climatizedRooms": 11}, {"year": 2025, "roomsInUse": 12, "climatizedRooms": 12}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33144591", "inepCode": "33144591", "name": "Creche Municipal Jécia de Freitas Ferreira", "officialName": "0514602 CRECHE MUNICIPAL JECIA DE FREITAS FERREIRA", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Irajá", "region": "Zona Norte", "address": "Praça Nossa Senhora da Apresentação, 298, Irajá, Rio de Janeiro (RJ), 21231-220", "latitude": -22.8301101, "longitude": -43.325307, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 140, "enrollmentByStage": {"infantil": 140, "fundamental_1": 0, "fundamental_2": 0, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["infantil"], "shifts": [], "shiftsInformed": false, "totalRooms": 6, "declaredClimatizedRooms": 6, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 6, "climatizedRooms": 6}, {"year": 2024, "roomsInUse": 6, "climatizedRooms": 6}, {"year": 2025, "roomsInUse": 6, "climatizedRooms": 6}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33074615", "inepCode": "33074615", "name": "E.M. Olegário Mariano", "officialName": "0515003 ESCOLA MUNICIPAL OLEGARIO MARIANO", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Honório Gurgel", "region": "Zona Norte", "address": "Praça das Esmeraldas, 65, Honório Gurgel, Rio de Janeiro (RJ), 21510-030", "latitude": -22.8455466666667, "longitude": -43.3518583333333, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 917, "enrollmentByStage": {"infantil": 127, "fundamental_1": 790, "fundamental_2": 0, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["infantil", "fundamental_1"], "shifts": [], "shiftsInformed": false, "totalRooms": 18, "declaredClimatizedRooms": 18, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 18, "climatizedRooms": 18}, {"year": 2024, "roomsInUse": 18, "climatizedRooms": 18}, {"year": 2025, "roomsInUse": 18, "climatizedRooms": 18}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33076464", "inepCode": "33076464", "name": "E.M. Waldemar Falcão", "officialName": "0515020 ESCOLA MUNICIPAL WALDEMAR FALCAO", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Oswaldo Cruz", "region": "Zona Norte", "address": "Praça Jaguaré, 53, Oswaldo Cruz, Rio de Janeiro (RJ), 21340-420", "latitude": -22.8759, "longitude": -43.3551, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 282, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 237, "medio": 0, "eja": 45}, "nightEnrollment": 45, "stages": ["fundamental_2", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 10, "declaredClimatizedRooms": 10, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 12, "climatizedRooms": 12}, {"year": 2024, "roomsInUse": 12, "climatizedRooms": 12}, {"year": 2025, "roomsInUse": 10, "climatizedRooms": 10}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33072965", "inepCode": "33072965", "name": "E.M. Manoel Bomfim", "officialName": "0312012 ESCOLA MUNICIPAL MANOEL BOMFIM", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Del Castilho", "region": "Zona Norte", "address": "Rua Braque, 31, Del Castilho, Rio de Janeiro (RJ), 20771-350", "latitude": -22.8843943, "longitude": -43.2742681, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 523, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 523, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["fundamental_2"], "shifts": [], "shiftsInformed": false, "totalRooms": 15, "declaredClimatizedRooms": 15, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 15, "climatizedRooms": 15}, {"year": 2024, "roomsInUse": 15, "climatizedRooms": 15}, {"year": 2025, "roomsInUse": 15, "climatizedRooms": 15}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33069131", "inepCode": "33069131", "name": "E.M. Bahia", "officialName": "0430003 ESCOLA MUNICIPAL BAHIA", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Bonsucesso", "region": "Zona Norte", "address": "Avenida Guilherme Maxwell, 243, Bonsucesso, Rio de Janeiro (RJ), 21040-211", "latitude": -22.8645781, "longitude": -43.247284, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 645, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 645, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["fundamental_2"], "shifts": [], "shiftsInformed": false, "totalRooms": 18, "declaredClimatizedRooms": 18, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 16, "climatizedRooms": 6}, {"year": 2024, "roomsInUse": 17, "climatizedRooms": 17}, {"year": 2025, "roomsInUse": 18, "climatizedRooms": 18}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33086206", "inepCode": "33086206", "name": "E.M. Tenente Antônio João", "officialName": "1120030 ESCOLA MUNICIPAL TENENTE ANTONIO JOAO", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Cidade Universitária (Ilha do Fundão)", "region": "Zona Norte", "address": "Rua Pascoal Lemme, 355, Cidade Universitária, Rio de Janeiro (RJ), 21941-918", "latitude": -22.8598383, "longitude": -43.218704, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 326, "enrollmentByStage": {"infantil": 38, "fundamental_1": 144, "fundamental_2": 144, "medio": 0, "eja": 0}, "nightEnrollment": 0, "stages": ["infantil", "fundamental_1", "fundamental_2"], "shifts": [], "shiftsInformed": false, "totalRooms": 13, "declaredClimatizedRooms": 13, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 13, "climatizedRooms": 12}, {"year": 2024, "roomsInUse": 13, "climatizedRooms": 13}, {"year": 2025, "roomsInUse": 13, "climatizedRooms": 13}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33077746", "inepCode": "33077746", "name": "E.M. Barão da Taquara", "officialName": "0716041 ESCOLA MUNICIPAL BARAO DA TAQUARA", "network": "municipal", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Taquara", "region": "Zona Oeste", "address": "Avenida Nelson Cardoso, 1221, Taquara, Rio de Janeiro (RJ), 22730-001", "latitude": -22.92227, "longitude": -43.37187, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 617, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 536, "medio": 0, "eja": 81}, "nightEnrollment": 0, "stages": ["fundamental_2", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 14, "declaredClimatizedRooms": 14, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 14, "climatizedRooms": 14}, {"year": 2024, "roomsInUse": 14, "climatizedRooms": 14}, {"year": 2025, "roomsInUse": 14, "climatizedRooms": 14}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33063397", "inepCode": "33063397", "name": "C.E. Amaro Cavalcanti", "officialName": "CE AMARO CAVALCANTI", "network": "estadual", "municipality": "Rio de Janeiro", "municipalityIbgeCode": "3304557", "borough": "Catete", "region": "Centro/Sul", "address": "Largo do Machado, 20, Catete, Rio de Janeiro (RJ), 22221-020", "latitude": -22.93024, "longitude": -43.1786, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 1223, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 0, "medio": 1153, "eja": 70}, "nightEnrollment": 187, "stages": ["medio", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 25, "declaredClimatizedRooms": 0, "declaredClimatizationStatus": "nenhuma", "climatizationHistory": [{"year": 2023, "roomsInUse": 24, "climatizedRooms": 1}, {"year": 2024, "roomsInUse": 24, "climatizedRooms": 1}, {"year": 2025, "roomsInUse": 25, "climatizedRooms": 0}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33058610", "inepCode": "33058610", "name": "C.E. Dom Walmor", "officialName": "CE DOM WALMOR", "network": "estadual", "municipality": "Nova Iguaçu", "municipalityIbgeCode": "3303500", "borough": "Parque Flora", "region": "Baixada Fluminense", "address": "Avenida Henrique Duque Estrada Meyer, 2495, Parque Flora, Nova Iguaçu (RJ), 26031-000", "latitude": -22.71806131, "longitude": -43.45875074, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 423, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 157, "medio": 163, "eja": 103}, "nightEnrollment": 103, "stages": ["fundamental_2", "medio", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 14, "declaredClimatizedRooms": 14, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 14, "climatizedRooms": 0}, {"year": 2024, "roomsInUse": 14, "climatizedRooms": 0}, {"year": 2025, "roomsInUse": 14, "climatizedRooms": 14}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33062110", "inepCode": "33062110", "name": "E.M. Prof. Scintilla Exel", "officialName": "E M PROF SCINTILLA EXEL", "network": "municipal", "municipality": "Queimados", "municipalityIbgeCode": "3304144", "borough": "Vila Scintila", "region": "Baixada Fluminense", "address": "Travessa Campo Alegre, s/n, Vila Scintila, Queimados (RJ), 26317-450", "latitude": -22.71107, "longitude": -43.57711, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 1479, "enrollmentByStage": {"infantil": 0, "fundamental_1": 571, "fundamental_2": 750, "medio": 0, "eja": 158}, "nightEnrollment": 158, "stages": ["fundamental_1", "fundamental_2", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 21, "declaredClimatizedRooms": 0, "declaredClimatizationStatus": "nenhuma", "climatizationHistory": [{"year": 2023, "roomsInUse": 21, "climatizedRooms": 0}, {"year": 2024, "roomsInUse": 21, "climatizedRooms": 0}, {"year": 2025, "roomsInUse": 21, "climatizedRooms": 0}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null},
+  {"id": "esc-33104379", "inepCode": "33104379", "name": "CIEP 175 José Lins do Rego", "officialName": "CIEP 175 JOSE LINS DO REGO", "network": "estadual", "municipality": "São João de Meriti", "municipalityIbgeCode": "3305109", "borough": "Parque Barreto", "region": "Baixada Fluminense", "address": "Rua Juparanã, s/n, Parque Barreto, São João de Meriti (RJ), 25565-360", "latitude": -22.7928514533558, "longitude": -43.3619930576702, "coordinatesSource": "Catálogo de Escolas Inep (coordenada declarada pela escola, conferir no mapa)", "totalStudents": 1369, "enrollmentByStage": {"infantil": 0, "fundamental_1": 0, "fundamental_2": 625, "medio": 577, "eja": 167}, "nightEnrollment": 167, "stages": ["fundamental_2", "medio", "eja"], "shifts": [], "shiftsInformed": false, "totalRooms": 18, "declaredClimatizedRooms": 18, "declaredClimatizationStatus": "total", "climatizationHistory": [{"year": 2023, "roomsInUse": 18, "climatizedRooms": 18}, {"year": 2024, "roomsInUse": 18, "climatizedRooms": 18}, {"year": 2025, "roomsInUse": 18, "climatizedRooms": 18}], "dataSource": "Censo Escolar 2025 (Inep), tabela escola, via Base dos Dados; endereço e coordenadas: Catálogo de Escolas (Inep)", "dataReferenceYear": 2025, "dataQuality": "alta", "isSentinel": false, "heatIslandFactorLST": null, "greenCoveragePercent": null}
+]
+```
+
+Depois delas, acrescente uma 13ª escola, fictícia, para guardar os exemplos:
+
+- `id: 'esc-demo'`, `inepCode: '00000000'`, `name: 'Escola Demonstração (fictícia)'`, `officialName: 'Escola fictícia para demonstração'`, `isDemo: true`.
+- `municipality: 'Rio de Janeiro'`, `borough: 'Bairro fictício'`, `region: 'Zona Norte'`.
+- `latitude: -22.84`, `longitude: -43.33`, `coordinatesSource: 'Posição ilustrativa, usada só para puxar a previsão do tempo'`.
+- `dataSource: 'Dados fictícios de demonstração'`, `dataQuality: 'parcial'`. Use zero nos números de matrícula e salas, `shiftsInformed: false` e `heatIslandFactorLST` e `greenCoveragePercent` como null.
+- Mova para ela a vistoria de exemplo e os 3 sensores simulados que hoje estão na E.M. Alfredo de Paula Freitas, com `isSentinel: true`.
+- Todas as outras vistorias e sensores de exemplo que estavam ligados a escolas saem. Nenhuma escola real pode ter vistoria ou sensor de exemplo.
+- Na interface, a escola fictícia aparece no seletor como "Escola Demonstração (fictícia)". Ela fica fora do mapa e de qualquer ranking, a não ser que a pessoa ligue a opção "Mostrar exemplo fictício".
+
+Mais ajustes nesta parte:
+
+- Em `App.tsx`, o `selectedSchoolId` padrão passa a ser `'esc-33074313'`.
+- Mantenha `REFERENCE_STATIONS`, mas as leituras delas são ilustrativas. Em `Monitoring72h.tsx`, no bloco das estações, use `nature: 'demonstracao'`. Troque o selo "ONLINE" por "EXEMPLO" e escreva: "Leitura ilustrativa. Integração com INMET e Alerta Rio pendente; coordenadas aproximadas."
+- Na faixa fixa de transparência do topo, use este texto: "Cadastro das escolas: Censo Escolar 2025 (Inep). Vistorias, sensores e leituras de estações: exemplos simulados. Previsão do tempo: Open-Meteo. Ilha de calor: em cálculo."
+
+## Parte 3. Ficha da escola, mapa e boletins com os dados novos
+
+- Bloco de cadastro em `SchoolDetail.tsx` (por volta da linha 255): fonte "Censo Escolar 2025 (Inep), declarado pela escola" e `nature: 'observacao'`. A `natureDescription` deve ser: "Registro oficial declarado pela própria escola ao Inep. Salas climatizadas no Censo não garantem aparelhos funcionando." Tire a palavra "homologados".
+- Mostre a série de salas climatizadas a partir de `climatizationHistory`, por exemplo "2023: 6 de 16 · 2024: 17 de 17 · 2025: 18 de 18".
+- Mostre as matrículas por etapa a partir de `enrollmentByStage`. Quando `nightEnrollment > 0`, mostre "Tem turma noturna (N matrículas)".
+- Turnos: quando `shiftsInformed` for false, mostre "Turnos não informados no Censo (a confirmar com a escola)". Esse texto também vale em `BulletinsAndReports.tsx` e no prompt do Gemini em `server.ts`.
+- Ilha de calor e verde: onde aparecem (`SchoolDetail.tsx` por volta da linha 455, `BulletinsAndReports.tsx` linha 311 e o popup do `SchoolMap.tsx`), siga duas regras:
+  - Valor null: mostre "Pendente: cálculo por satélite ainda não importado", em cinza, sem número e sem selo de observação.
+  - Valor importado (Parte 5): mostre o número com `nature: 'observacao'`, fonte "Landsat 8/9 (USGS), verões de 2021/22 a 2025/26" e esta descrição: "Temperatura de superfície medida por satélite por volta das 10h. Compara lugares; não é a temperatura do ar dentro da sala."
+- Em `thermalMath.ts`, função de risco (linhas 300 a 340):
+  - Com `heatIslandFactorLST` null, não some pontos de ilha de calor e acrescente o fator "Ilha de calor: pendente". Faça o mesmo com o verde: sem pontos e com o fator "Arborização do entorno: pendente".
+  - Retorne também `maxPossibleScore` (a soma dos tetos dos componentes que têm dado) e `isPartial: boolean`.
+  - O nível (baixa, moderada, alta, extrema) passa a ser calculado sobre `score / maxPossibleScore`, nas mesmas proporções dos limiares atuais.
+  - Quando `isPartial` for true, a interface mostra "Índice parcial: só previsão do tempo".
+  - Nunca gere NaN.
+  - Comente no código que os limiares de 4,5, 3,0 e 1,5 °C são provisórios e serão recalibrados com os dados reais.
+- Testes novos em `tests/thermalStress.test.ts`:
+  - (a) Escola com LST e verde null: `isPartial === true`, nenhum NaN e os fatores incluem "pendente".
+  - (b) A escola de teste que já existe, com valores numéricos, mantém exatamente o mesmo score de antes.
+
+## Parte 4. Tirar as atribuições falsas à LIGA/UFRRJ
+
+Remova ou corrija toda menção que use a LIGA/UFRRJ como fonte de um número mostrado no painel:
+
+- `src/types.ts` linha 114.
+- `SchoolDetail.tsx` linhas 259 e 459.
+- `SchoolMap.tsx` linha 107. A fonte passa a ser "Censo Escolar 2025 e Catálogo de Escolas (Inep)".
+- `SchoolMap.tsx` por volta das linhas 306 a 315. Apague as camadas desenhadas à mão "Ilha de Calor Zona Norte (+5,6 ºC LST)" e "Bangu (+5,2)". Uma camada de ilha de calor só volta quando vier do cálculo real.
+- `App.tsx` linha 357, no rodapé "LIGA/UFRRJ Climatologia". Troque as fontes do rodapé por: Inep, Open-Meteo, USGS Landsat (em cálculo) e ESA WorldCover (em cálculo).
+- `thermalMath.ts` linha 318.
+- `server.ts` linha 171 (prompt do Gemini) e linha 270 (`sourcesUsed` do fallback).
+
+No prompt do Gemini em `server.ts`, inclua esta instrução: "Se um dado estiver ausente ou pendente, diga que está pendente. Nunca estime nem invente valores, nomes de pessoas ou instituições."
+
+O estudo da UFRRJ pode aparecer só como referência bibliográfica de contexto, numa seção de referências. Nunca pode ser fonte de um número do painel.
+
+## Parte 5. Importar o resultado do Earth Engine
+
+O cálculo da ilha de calor é feito fora do app, num script do Google Earth Engine (`termometro_ilha_de_calor.js`), que gera um CSV. Não tente calcular temperatura de superfície dentro do app.
+
+- Crie `src/data/heatIslandResults.ts`, que exporta `HEAT_ISLAND_RESULTS: HeatIslandRecord & { inep: string }[]`, vazio por enquanto, com um comentário dizendo de onde os dados vêm.
+- Crie `src/utils/heatIslandImport.ts` com `parseGeeHeatIslandCsv(text: string)`:
+  - Colunas esperadas: `inep, nome, municipio, lst_c, ref_metro_c, anom_metro_c, ref_mun_c, anom_mun_c, n_obs, arvores_200m_pct, qualidade, periodo, metodo`.
+  - Trate `inep` como texto, mesmo se vier como número.
+  - Campo vazio vira null.
+  - Rejeite linhas sem `inep` válido de 8 dígitos e liste-as num relatório de erros.
+- Ao carregar as escolas, junte os resultados pelo `inepCode`:
+  - `heatIslandFactorLST = anom_metro_c`
+  - `greenCoveragePercent = arvores_200m_pct` arredondado para inteiro
+  - `heatIsland` recebe o registro completo
+- Quando `quality === 'poucas_observacoes'`, mostre o aviso "Poucas imagens sem nuvem: valor frágil".
+- Crie `scripts/importHeatIsland.ts`. Ele lê um CSV em `data/termometro_ilha_calor_escolas.csv` e reescreve `heatIslandResults.ts` sem alterar nenhum valor. Ele também mostra quantas escolas casaram com `INITIAL_SCHOOLS` e quantas não casaram.
+- Teste do parser com um CSV sintético de duas linhas. Os valores sintéticos ficam só dentro do teste.
+- Quando eu anexar o CSV real numa próxima mensagem, use esse script. Não digite os valores à mão.
+
+## Parte 6. Piloto (`PilotAndValidation.tsx`)
+
+- E.M. Alfredo de Paula Freitas:
+  - `schoolId: 'esc-33074313'`, `borough: 'Irajá'`.
+  - Troque o `rationale` por: "Escola da Zona Norte que declara ao Censo 2025 todas as 12 salas em uso como climatizadas. O piloto vai verificar se a climatização declarada funciona na prática. Ilha de calor e tipo de telhado: a confirmar."
+  - Saem "+3.8ºC LST", "cobertura de fibrocimento" e "histórico de sobrecarga elétrica", porque nada disso foi verificado.
+- "E.M. Bangu" (esc-33062836):
+  - Vira uma vaga sem escola: `schoolId: 'a-definir'`, `schoolName: 'A definir pelo ranking de ilha de calor'`, `borough: 'A definir'`, `region: 'Zona Oeste ou Baixada Fluminense'`, `targetRooms: []`.
+  - `rationale`: "Será escolhida entre as escolas públicas com maior anomalia de temperatura de superfície no cálculo do Earth Engine."
+  - A interface precisa lidar com essa vaga: sem link para ficha de escola e com lista de salas vazia.
+- CIEP 175 José Lins do Rego:
+  - `schoolId: 'esc-33104379'`, `borough: 'Parque Barreto, São João de Meriti'`, `region: 'Baixada Fluminense'`.
+  - Hoje ele aparece na Pavuna, o que está errado.
+  - `rationale`: "Tipologia CIEP, com estrutura de concreto pré-moldado. Declara 18 de 18 salas climatizadas no Censo 2025. Ventilação e cobertura: a confirmar na visita."
+- E.M. Barão da Taquara:
+  - `schoolId: 'esc-33077746'`, `borough: 'Taquara'`.
+  - `rationale`: "Escola de contraste na Zona Oeste. Percentual de verde no entorno a calcular (ESA WorldCover, raio de 200 m)." Sai o "28% de área verde".
+- Acima das fichas de salas de cada escola, mostre: "Ficha de salas preliminar. Nada aqui foi verificado na escola; tudo será confirmado na visita técnica."
+
+## Parte 7. Firestore: auditoria e leitura dos IDs antigos, sem apagar nada
+
+Crie `src/data/legacySchoolIds.ts` com o mapa de IDs antigos para IDs reais:
+
+```ts
+export const LEGACY_SCHOOL_ID_MAP: Record<string, string> = {
+  'esc-33075210': 'esc-33074313', // E.M. Alfredo de Paula Freitas
+  'esc-33075228': 'esc-33144591', // Creche Municipal Jécia de Freitas Ferreira
+  'esc-33075341': 'esc-33074615', // E.M. Olegário Mariano
+  'esc-33074094': 'esc-33076464', // E.M. Waldemar Falcão
+  'esc-33074159': 'esc-33072965', // E.M. Manoel Bomfim
+  'esc-33068990': 'esc-33069131', // E.M. Bahia
+  'esc-33069123': 'esc-33086206', // E.M. Tenente Antônio João
+  'esc-33011005': 'esc-33063397', // C.E. Amaro Cavalcanti
+  'esc-33035012': 'esc-33058610', // C.E. Dom Walmor
+  'esc-33041520': 'esc-33062110', // E.M. Prof. Scintilla Exel
+  'esc-33067145': 'esc-33104379', // CIEP 175 José Lins do Rego (piloto)
+  'esc-33081946': 'esc-33077746', // E.M. Barão da Taquara (piloto)
+};
+// IDs antigos sem escola real correspondente (órfãos): não apagar, só listar na auditoria.
+export const ORPHAN_LEGACY_SCHOOL_IDS = [
+  'esc-33074124', // "E.M. Carlos Gomes" (a escola real com esse nome é uma creche, outro código)
+  'esc-33020011', // "C.E. Cascadura"
+  'esc-33051001', // "E.M. Bangu"
+  'esc-33051099', // "C.E. Professor Diniz Neves"
+  'esc-33017045', // "C.E. Visconde de Abaeté"
+  'esc-33062836', // "E.M. Bangu" do piloto
+];
+```
+
+Leitura com o mapa, sem escrever nada:
+
+- Em `subscribeToAllInspections` (`src/firebase.ts`), se o `schoolId` de um documento estiver no mapa, exponha a vistoria também sob o ID novo, marcada com `legacySchoolId`. Se existir documento no ID novo, ele tem prioridade.
+- Na ficha, uma vistoria vinda do ID antigo mostra: "Vistoria registrada antes da correção do cadastro (ID antigo: X)".
+- `fetchSchoolTechnicalRevisions` e `fetchInspectionDraft` também procuram no ID antigo quando não acharem nada no novo.
+- Todas as gravações novas usam só os IDs novos.
+
+Auditoria somente leitura:
+
+- Amplie `scripts/auditFirestoreAndData.ts`, ou crie uma tela visível só para reviewer/admin.
+- Ela lista todos os documentos de `inspections` e `inspectionDrafts` e classifica cada um como: ID atual, legado mapeado, órfão ou demo.
+- Ela mostra as contagens. Não grava nem apaga nada.
+- No mesmo script, verifique que todo `inepCode` de `INITIAL_SCHOOLS` está nesta lista de conferidos: 33074313, 33144591, 33074615, 33076464, 33072965, 33069131, 33086206, 33077746, 33063397, 33058610, 33062110, 33104379, mais `00000000` da escola fictícia. O script falha se aparecer outro código.
+
+Cópia dos documentos legados para os IDs novos: só faça se eu pedir depois, numa mensagem separada.
+
+## Parte 8. Segurança nas regras do Firestore
+
+Hoje `match /inspectors/{uid}` deixa qualquer pessoa logada criar ou editar o próprio perfil. Assim ela pode se dar `role: 'admin'`. Corrija:
+
+```
+allow create: if isSignedIn() && isValidId(uid) && (
+  (request.auth.uid == uid && (!('role' in incoming()) || incoming().role == 'pending')) || isReviewerOrAdmin());
+allow update: if isSignedIn() && isValidId(uid) && (
+  (request.auth.uid == uid && incoming().get('role', null) == existing().get('role', null)) || isReviewerOrAdmin());
+```
+
+Mais o que fazer nesta parte:
+
+- Acrescente casos de teste no avaliador de regras do script de auditoria:
+  - Usuário comum tentando se dar `admin` na criação: DENY.
+  - Usuário comum tentando mudar o próprio `role` na edição: DENY.
+  - Reviewer alterando o `role` de outro: ALLOW.
+- Me avise que o primeiro admin precisa ser definido pelo console do Firebase ou por custom claim.
+
+## Parte 9. Corrigir o `implementation_plan.md`
+
+Na seção 11.2, troque as frases "Códigos INEP: 100% autênticos" e "Coordenadas 100% validadas" pelo texto abaixo:
+
+"A checagem anterior validou só o formato dos códigos. Em 4/11/2026, a base foi refeita com 12 escolas conferidas no Censo Escolar 2025 e no Catálogo de Escolas do Inep. As coordenadas são as declaradas pela escola ao Inep e precisam de conferência visual no mapa antes de qualquer cálculo fino. Ilha de calor e arborização ficam pendentes até a importação do resultado do Earth Engine."
+
+## Como saber que terminou
+
+1. Uma busca por "LIGA" e "UFRRJ" em `src/` e `server.ts` só encontra a referência bibliográfica de contexto, se ela existir.
+2. Os IDs antigos aparecem só em `legacySchoolIds.ts`, no script de auditoria e nos testes.
+3. Nenhuma escola real tem vistoria ou sensor de exemplo. Só a "Escola Demonstração (fictícia)" tem.
+4. Nenhum número de ilha de calor ou de verde aparece na tela enquanto `heatIslandResults.ts` estiver vazio.
+5. `npm test` passa (81 testes antigos mais os novos) e `npm run lint` passa.
+6. No fim, me mostre:
+   - a lista de arquivos alterados;
+   - o resultado da auditoria do Firestore (quantos documentos em cada classe);
+   - qualquer ponto onde você precisou decidir algo que este prompt não cobria.

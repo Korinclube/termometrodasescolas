@@ -1,0 +1,6 @@
+{
+  "name": "Termômetro das Escolas RJ",
+  "description": "Plataforma de inteligência climática escolar para o Rio de Janeiro com previsão de estresse térmico em 72h, mapa de vulnerabilidade, inspeção de infraestrutura e boletins preventivos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

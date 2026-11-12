@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: nega tudo por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Verificação de perfil e credenciamento de inspetor (RBAC)
+    function isInspector() {
+      return isSignedIn() && (
+        request.auth.token.role in ['inspector', 'reviewer', 'admin'] ||
+        (exists(/databases/$(database)/documents/inspectors/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/inspectors/$(request.auth.uid)).data.role in ['inspector', 'reviewer', 'admin'])
+      );
+    }
+
+    function isReviewerOrAdmin() {
+      return isSignedIn() && (
+        request.auth.token.role in ['reviewer', 'admin'] ||
+        (exists(/databases/$(database)/documents/inspectors/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/inspectors/$(request.auth.uid)).data.role in ['reviewer', 'admin'])
+      );
+    }
+
+    // Validação dos dados técnicos públicos (sem PII)
+    function isValidPublicInspection(data) {
+      return data.keys().hasAll([
+        'schoolId', 'inspectedAt', 'inspectorRole',
+        'realAcStatus', 'roofType', 'ventilationType', 'waterAccess'
+      ]) &&
+      data.keys().hasOnly([
+        'schoolId', 'inspectedAt', 'inspectorRole',
+        'realAcStatus', 'roofType', 'ventilationType', 'waterAccess',
+        'acNotes', 'electricalOverloadReported', 'cableTheftReported', 'notes',
+        'currentRevisionId', 'updatedAt', 'status', 'version', 'source', 'approvedAt',
+        'acType', 'windowsOperable', 'windowsClosedWhenAcOn', 'pmocStatus',
+        'lastFilterCleaning', 'moldOrDampSigns', 'nearbyPollutionSource', 'roomDimensions'
+      ]) &&
+      data.schoolId is string && data.schoolId.size() > 0 && data.schoolId.size() <= 64 &&
+      data.inspectedAt is string && data.inspectedAt.size() <= 32 &&
+      data.inspectorRole in ['direcao', 'professor', 'gremio', 'comunidade', 'tecnico_externo'] &&
+      data.realAcStatus in ['operante', 'parcial_inoperante', 'inoperante_eletrica', 'desconhecido'] &&
+      data.roofType in ['fibrocimento', 'laje_concreto', 'telha_metalica', 'termoacustica', 'outro_desconhecido'] &&
+      data.ventilationType in ['cruzada_adequada', 'unilateral_parcial', 'bloqueada_ou_fechada', 'desconhecido'] &&
+      data.waterAccess in ['adequado_resfriado', 'parcial', 'critico', 'desconhecido'] &&
+      (!('status' in data) || data.status in ['published', 'archived']) &&
+      (!('version' in data) || data.version is number) &&
+      (!('source' in data) || (data.source is string && data.source.size() <= 64)) &&
+      (!('approvedAt' in data) || (data.approvedAt is string && data.approvedAt.size() <= 64)) &&
+      (!('acNotes' in data) || (data.acNotes is string && data.acNotes.size() <= 500)) &&
+      (!('electricalOverloadReported' in data) || (data.electricalOverloadReported is bool)) &&
+      (!('cableTheftReported' in data) || (data.cableTheftReported is bool)) &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+      (!('currentRevisionId' in data) || (data.currentRevisionId is string && data.currentRevisionId.size() <= 64)) &&
+      (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64)) &&
+      (!('acType' in data) || data.acType in ['split', 'janela', 'central_com_renovacao', 'ventilador', 'nenhum', 'desconhecido']) &&
+      (!('windowsOperable' in data) || data.windowsOperable in ['todas_abrem', 'algumas', 'nenhuma', 'desconhecido']) &&
+      (!('windowsClosedWhenAcOn' in data) || data.windowsClosedWhenAcOn in ['sempre', 'as_vezes', 'nunca', 'desconhecido']) &&
+      (!('pmocStatus' in data) || data.pmocStatus in ['visto_documento', 'informado_sem_documento', 'nao_tem', 'desconhecido']) &&
+      (!('lastFilterCleaning' in data) || (data.lastFilterCleaning is string && data.lastFilterCleaning.matches('^[0-9]{4}-[0-9]{2}$'))) &&
+      (!('moldOrDampSigns' in data) || data.moldOrDampSigns is bool) &&
+      (!('nearbyPollutionSource' in data) || data.nearbyPollutionSource in ['via_movimentada', 'obra', 'queima_de_lixo', 'industria', 'nenhuma', 'desconhecido']) &&
+      (!('roomDimensions' in data) || (
+        data.roomDimensions is map &&
+        data.roomDimensions.keys().hasAll(['lengthM', 'widthM', 'heightM']) &&
+        data.roomDimensions.lengthM is number && data.roomDimensions.lengthM >= 1 && data.roomDimensions.lengthM <= 30 &&
+        data.roomDimensions.widthM is number && data.roomDimensions.widthM >= 1 && data.roomDimensions.widthM <= 30 &&
+        data.roomDimensions.heightM is number && data.roomDimensions.heightM >= 2 && data.roomDimensions.heightM <= 8
+      ));
+    }
+
+    // Validação da revisão histórica (técnica, imutável)
+    function isValidRevision(data) {
+      return data.keys().hasAll([
+        'revisionId', 'schoolId', 'inspectedAt', 'inspectorRole', 'realAcStatus'
+      ]) &&
+      data.revisionId is string && data.revisionId.size() <= 64 &&
+      data.schoolId is string && data.schoolId.size() <= 64 &&
+      data.inspectorRole in ['direcao', 'professor', 'gremio', 'comunidade', 'tecnico_externo'] &&
+      data.realAcStatus in ['operante', 'parcial_inoperante', 'inoperante_eletrica', 'desconhecido'];
+    }
+
+    // 1. Coleção Pública de Vistorias Técnicas
+    match /inspections/{schoolId} {
+      allow get: if isValidId(schoolId);
+      allow list: if true;
+      allow create, update: if isSignedIn() && isValidId(schoolId) && isInspector() && isValidPublicInspection(incoming()) && incoming().schoolId == schoolId;
+      allow delete: if false;
+
+      // 2. Subcoleção Pública de Histórico Técnico Versionado (imutável)
+      match /revisions/{revisionId} {
+        allow get, list: if isValidId(schoolId) && isValidId(revisionId);
+        allow create: if isSignedIn() && isValidId(schoolId) && isValidId(revisionId) && isInspector() && isValidRevision(incoming());
+        allow update, delete: if false;
+      }
+
+      // 3. Subcoleção Restrita de Dados Pessoais do Inspetor (PII)
+      // Bloqueia expressamente usuários não autenticados e usuários sem permissão de inspetor
+      match /private/{revisionId} {
+        allow get: if isSignedIn() && isValidId(schoolId) && isValidId(revisionId) && isInspector() && (
+          resource.data.authorUid == request.auth.uid || isReviewerOrAdmin()
+        );
+        allow list: if isSignedIn() && isValidId(schoolId) && isInspector() && (
+          resource.data.authorUid == request.auth.uid || isReviewerOrAdmin()
+        );
+        allow create: if isSignedIn() && isValidId(schoolId) && isValidId(revisionId) && isInspector() && incoming().authorUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // 4. Coleção Restrita de Rascunhos de Vistoria (somente inspetores autores)
+    match /inspectionDrafts/{draftId} {
+      allow get: if isSignedIn() && isValidId(draftId) && isInspector() && resource.data.authorUid == request.auth.uid;
+      allow list: if isSignedIn() && isInspector() && resource.data.authorUid == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(draftId) && isInspector() && incoming().authorUid == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(draftId) && isInspector() && resource.data.authorUid == request.auth.uid && incoming().authorUid == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(draftId) && isInspector() && resource.data.authorUid == request.auth.uid;
+    }
+
+    // 5. Coleção de Perfis e Permissões de Inspetores
+    match /inspectors/{uid} {
+      allow get: if isSignedIn() && isValidId(uid) && (request.auth.uid == uid || isReviewerOrAdmin());
+      allow create: if isSignedIn() && isValidId(uid) && (
+        (request.auth.uid == uid && (!('role' in incoming()) || incoming().role == 'pending')) ||
+        isReviewerOrAdmin()
+      );
+      allow update: if isSignedIn() && isValidId(uid) && (
+        (request.auth.uid == uid && incoming().get('role', null) == existing().get('role', null)) ||
+        isReviewerOrAdmin()
+      );
+      allow delete: if false;
+    }
+  }
+}
